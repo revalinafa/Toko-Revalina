@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>H1D023011 | Revalina </title>
+  <title>H1D023011 | Revalina Fidiya</title>
 
   <?php echo $__env->make('layouts.style', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
