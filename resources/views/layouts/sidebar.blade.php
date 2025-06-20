@@ -2,7 +2,7 @@
     <!-- Brand Logo -->
     <a href="{{asset ('#')}}" class="brand-link">
       <img src="{{asset ('adminlte3/dist/img/AdminLTELogo.png')}}" alt="AdminLTE Logo" class="brand-image img-circle " >
-      <span class="brand-text font-weight-light"> Manajemen Toko</span>
+      <span class="brand-text font-weight-light"> Toko Revalina</span>
     </a>
 
     <!-- Sidebar -->

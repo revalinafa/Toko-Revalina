@@ -1,10 +1,9 @@
 <div class="content-wrapper">
-    <!-- Content Header -->
     <section class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1><i class="fas fa-user mr-1"></i> @yield('title')</h1>
+                    <h1><i class="fas fa-user mr-1"></i> {{ $title }}</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
@@ -12,7 +11,8 @@
                             <a href="#"><i class="fas fa-home mr-1"></i> Dashboard</a>
                         </li>
                         <li class="breadcrumb-item active">
-                            <i class="fas fa-user mr-1"></i> @yield('title')
+                            <i class="fas fa-user mr-1"></i> 
+                            {{ $title }}
                         </li>
                     </ol>
                 </div>
@@ -20,12 +20,11 @@
         </div>
     </section>
 
-    <!-- Main Content -->
     <section class="content">
         <div class="card">
             <div class="card-header">
                 <div class="d-flex justify-content-between">
-                    <button class="btn btn-sm btn-primary">
+                    <button wire:click="create" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#createModal">
                         <i class="fas fa-plus mr-1"></i> Tambah Data
                     </button>
                     <div class="btn-group dropleft">
@@ -45,21 +44,21 @@
             </div>
 
             <div class="card-body">
-              
-              <div class="mb-3 d-flex justify-content-between">
-                <div class="col-3">
-                  <select wire:model.live="paginate" class="form-control" id="">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                  </select>
-                </div>
 
-                <div class="col-4">
-                  <input wire:model.live="search" type="text" name="search" class="form-control" placeholder="Search...">
+                <div class="mb-3 d-flex justify-content-between">
+                    <div class="col-3">
+                        <select wire:model.live="paginate" class="form-control" id="">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+
+                    <div class="col-4">
+                        <input wire:model.live="search" type="text" name="search" class="form-control" placeholder="Search...">
+                    </div>
                 </div>
-              </div>
 
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -78,18 +77,20 @@
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $item->name }}</td>
                                     <td>{{ $item->email }}</td>
-                                      <td>
-                                          @if ($item->role == 'superadmin')
-                                              <span class="badge badge-primary">Super Admin</span>
-                                          @elseif ($item->role == 'admin')
-                                              <span class="badge badge-info">Admin</span>
-                                          @endif
-                                      </td>
                                     <td>
-                                        <button class="btn btn-sm btn-warning">
+                                        @if ($item->role == 'superadmin')
+                                            <span class="badge badge-primary">Super Admin</span>
+                                        @elseif ($item->role == 'admin')
+                                            <span class="badge badge-info">Admin</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        {{-- Tombol Edit --}}
+                                        <button wire:click="edit({{ $item->id }})" class="btn btn-sm btn-warning" data-toggle="modal" data-target="#editModal">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-danger">
+                                        {{-- Tombol Hapus: Tambahkan di sini --}}
+                                        <button wire:click="deleteConfirmation({{ $item->id }})" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteModal">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </td>
@@ -104,4 +105,56 @@
             </div>
         </div>
     </section>
+
+    @include('livewire.superadmin.user.create')
+
+    @script
+    <script>
+        $wire.on('closeCreateModal', () => {
+            $('#createModal').modal('hide');
+            Swal.fire({
+                title: "Sukses!",
+                text: "Data Berhasil Ditambah!",
+                icon: "success"
+            });
+        });
+    </script>
+    @endscript
+
+    @include('livewire.superadmin.user.edit')
+
+    @script
+    <script>
+        // Listener untuk membuka modal edit
+        $wire.on('showEditModal', () => {
+            $('#editModal').modal('show');
+        });
+
+        // Listener untuk menutup modal edit setelah update
+        $wire.on('closeEditModal', () => {
+            $('#editModal').modal('hide');
+            Swal.fire({
+                title: "Sukses!",
+                text: "Data Berhasil Diperbarui!",
+                icon: "success"
+            });
+        });
+    </script>
+    @endscript
+
+    @include('livewire.superadmin.user.delete')
+
+    @script
+    <script>
+        $wire.on('closeDeleteModal', () => {
+            $('#deleteModal').modal('hide');
+            Swal.fire({
+                title: "Terhapus!",
+                text: "Data berhasil dihapus!",
+                icon: "success"
+            });
+        });
+    </script>
+    @endscript
+
 </div>

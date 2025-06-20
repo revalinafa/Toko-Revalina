@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>H1D023011 | @yield('title')</title>
+  <title>H1D023011 | Revalina Fidiya</title>
 
   @include('layouts.style')
 
@@ -19,7 +19,7 @@
 
     @include('layouts.sidebar')
 
-    @yield('content')
+    {{ $slot }}
   
     @include('layouts.footer')
 
