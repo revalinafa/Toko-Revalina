@@ -2,60 +2,53 @@
 
 namespace App\Livewire\Superadmin\Produk;
 
-use App\Models\Produk; // Pastikan ini benar
-use App\Models\Kategori; // Tambahkan import Kategori
-use App\Models\Supplier; // Tambahkan import Supplier
+use App\Models\Produk;
+use App\Models\Kategori;
+use App\Models\Supplier;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Facades\DB; // Untuk transaksi atau debugging jika diperlukan
 use Livewire\Attributes\Layout;
+use Illuminate\Support\Facades\DB;
 
-#[Layout('layouts.app')] 
-
+#[Layout('layouts.app')]
 class Index extends Component
 {
     use WithPagination;
     protected $paginationTheme = 'bootstrap';
 
-    // Properti untuk filter dan pagination
     public $paginate = 10;
     public $search = '';
 
-    // Properti untuk form Tambah/Edit Produk
+    // Properti baru untuk filter
+    public $filterKategoriId = ''; // Default 'semua' atau kosong
+    public $filterSupplierId = ''; // Default 'semua' atau kosong
+
     public $nama_produk,
            $harga,
            $stok,
            $kategori_id,
            $supplier_id,
-           $produk_id; // Digunakan untuk menyimpan ID produk yang sedang diedit/dihapus
+           $produk_id;
 
-    // Properti untuk menyimpan daftar kategori dan supplier
-    // Akan diisi saat render atau saat dibutuhkan untuk dropdown
     public $kategoris = [];
     public $suppliers = [];
 
-    // Listener untuk event dari JavaScript
     protected $listeners = [
-        'showCreateModal', // Jika ingin memicu modal create dari Livewire
-        'showEditModal',   // Untuk membuka modal edit
         'closeCreateModal',
         'closeEditModal',
         'closeDeleteModal'
     ];
 
-    // Metode `mount` akan dijalankan sekali saat komponen diinisialisasi
     public function mount()
     {
         $this->loadDropdownData();
     }
 
-    // Metode untuk memuat data kategori dan supplier
     public function loadDropdownData()
     {
-        $this->kategoris = Kategori::select('id', 'nama_kategori')->get(); // Sesuaikan 'nama_kategori' dengan nama kolom di tabel kategori Anda
-        $this->suppliers = Supplier::select('id', 'nama_supplier')->get(); // Sesuaikan 'nama_supplier' dengan nama kolom di tabel supplier Anda
+        $this->kategoris = Kategori::select('id', 'nama_kategori')->orderBy('nama_kategori')->get();
+        $this->suppliers = Supplier::select('id', 'nama_supplier')->orderBy('nama_supplier')->get();
     }
-
 
     public function render()
     {
@@ -66,39 +59,57 @@ class Index extends Component
             $query->where('nama_produk', 'like', '%' . $this->search . '%')
                   ->orWhere('harga', 'like', '%' . $this->search . '%')
                   ->orWhere('stok', 'like', '%' . $this->search . '%')
-                  // Cari berdasarkan nama kategori/supplier jika relasi di-eager load
                   ->orWhereHas('kategori', function($q) {
-                      $q->where('nama_kategori', 'like', '%' . $this->search . '%'); // Sesuaikan 'nama_kategori'
+                      $q->where('nama_kategori', 'like', '%' . $this->search . '%');
                   })
                   ->orWhereHas('supplier', function($q) {
-                      $q->where('nama_supplier', 'like', '%' . $this->search . '%'); // Sesuaikan 'nama_supplier'
+                      $q->where('nama_supplier', 'like', '%' . $this->search . '%');
                   });
+        }
+
+        // Penerapan filter kategori
+        if ($this->filterKategoriId && $this->filterKategoriId !== '') { // Pastikan bukan string kosong
+            $query->where('kategori_id', $this->filterKategoriId);
+        }
+
+        // Penerapan filter supplier
+        if ($this->filterSupplierId && $this->filterSupplierId !== '') { // Pastikan bukan string kosong
+            $query->where('supplier_id', $this->filterSupplierId);
         }
 
         $data = [
             'title' => 'Data Produk',
-            'produks' => $query->with(['kategori', 'supplier']) // Eager load relasi untuk menampilkan nama
+            'produks' => $query->with(['kategori', 'supplier'])
                                ->orderBy('nama_produk', 'asc')
                                ->paginate($this->paginate),
-            'kategoris' => $this->kategoris, // Kirim ke view untuk dropdown
-            'suppliers' => $this->suppliers, // Kirim ke view untuk dropdown
+            'kategoris' => $this->kategoris,
+            'suppliers' => $this->suppliers,
         ];
 
         return view('livewire.superadmin.produk.index', $data);
     }
 
-    // Reset properti untuk form tambah produk
-    public function create()
-    {
+    // Metode reset dan CRUD lainnya tetap sama seperti sebelumnya
+    // (create, store, edit, update, deleteConfirmation, destroy)
+    // Saya tidak menyertakannya lagi di sini untuk brevity, anggap sama dengan yang Anda miliki
+    // atau yang saya berikan di respons sebelumnya untuk Produk.
+
+    // Contoh metode create (pastikan memanggil loadDropdownData)
+    public function create(){
         $this->resetValidation();
         $this->reset([
             'nama_produk', 'harga', 'stok', 'kategori_id', 'supplier_id', 'produk_id'
         ]);
-        // Pastikan dropdown diisi ulang jika data berubah
-        $this->loadDropdownData();
+        $this->loadDropdownData(); // Memuat data dropdown saat membuat
     }
 
-    // Menyimpan produk baru
+    // Metode store, edit, update, deleteConfirmation, destroy juga sama
+    // Anda bisa copy-paste dari komponen Produk/Index.php yang sudah lengkap sebelumnya.
+    // Pastikan update() tidak mempengaruhi stok di sini.
+    // Pastikan destroy() tidak mempengaruhi stok di sini.
+    // Stok akan dikelola oleh Penjualan dan Stok Log.
+
+    // Contoh: Method store
     public function store()
     {
         $this->validate([
@@ -143,7 +154,8 @@ class Index extends Component
         }
     }
 
-    // Mengisi form edit dengan data produk yang dipilih
+    // ... sisanya dari fungsi edit, update, deleteConfirmation, destroy
+    // Pastikan di edit juga ada loadDropdownData();
     public function edit($id)
     {
         $produk = Produk::findOrFail($id);
@@ -154,13 +166,10 @@ class Index extends Component
         $this->kategori_id = $produk->kategori_id;
         $this->supplier_id = $produk->supplier_id;
 
-        // Pastikan dropdown diisi ulang jika data berubah
         $this->loadDropdownData();
-
         $this->dispatch('showEditModal');
     }
 
-    // Memperbarui produk
     public function update($id)
     {
         $this->resetValidation();
@@ -208,17 +217,13 @@ class Index extends Component
         }
     }
 
-    // Menyiapkan ID produk untuk modal konfirmasi hapus
     public function deleteConfirmation($id)
     {
-        $this->produk_id = $id; // Simpan ID produk yang akan dihapus
-        // Modal akan dibuka via data-target di button HTML
+        $this->produk_id = $id;
     }
 
-    // Menghapus produk
     public function destroy()
     {
-        // Pastikan ada produk_id yang dipilih
         if (!$this->produk_id) {
             $this->dispatch('error', 'Tidak ada produk yang dipilih untuk dihapus.');
             return;
@@ -230,7 +235,7 @@ class Index extends Component
 
             $this->dispatch('success', 'Produk berhasil dihapus.');
             $this->dispatch('closeDeleteModal');
-            $this->reset('produk_id'); // Reset ID produk setelah dihapus
+            $this->reset('produk_id');
         } catch (\Exception $e) {
             $this->dispatch('error', 'Gagal menghapus produk: ' . $e->getMessage());
         }

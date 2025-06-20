@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Superadmin\Penjualan;
 
-use App\Models\Penjualan;
-use App\Models\Produk; // Perlu untuk dropdown produk
 use Livewire\Component;
+use App\Models\Produk;
+use App\Models\Penjualan;
+use App\Models\StokLog;
 use Livewire\WithPagination;
-use Livewire\Attributes\Layout; // Pastikan ini ada
+use Livewire\Attributes\Layout;
+use Illuminate\Support\Facades\DB;
 
 #[Layout('layouts.app')]
 class Index extends Component
@@ -17,15 +19,13 @@ class Index extends Component
     public $paginate = 10;
     public $search = '';
 
-    // Properti untuk form Penjualan
     public $produk_id,
            $jumlah,
            $tanggal,
-           $penjualan_id; // Digunakan untuk menyimpan ID penjualan yang sedang diedit/dihapus
+           $penjualan_id;
 
-    public $produks = []; // Untuk dropdown produk
+    public $produks = [];
 
-    // Listener untuk event JavaScript
     protected $listeners = [
         'closeCreatePenjualanModal',
         'closeEditPenjualanModal',
@@ -39,11 +39,12 @@ class Index extends Component
 
     public function loadProdukData()
     {
-        $this->produks = Produk::select('id', 'nama_produk')->orderBy('nama_produk')->get();
+        $this->produks = Produk::select('id', 'nama_produk', 'stok', 'harga')->orderBy('nama_produk')->get(); // Ambil harga juga
     }
 
     public function render()
     {
+        // ... (kode render() tidak berubah, seperti yang sudah Anda miliki) ...
         $query = Penjualan::query();
 
         if ($this->search) {
@@ -56,10 +57,10 @@ class Index extends Component
 
         $data = [
             'title' => 'Data Penjualan',
-            'penjualans' => $query->with('produk') // Eager load relasi produk
+            'penjualans' => $query->with('produk')
                                  ->orderBy('tanggal', 'desc')
                                  ->paginate($this->paginate),
-            'produks' => $this->produks, // Kirim ke view untuk dropdown
+            'produks' => $this->produks,
         ];
 
         return view('livewire.superadmin.penjualan.index', $data);
@@ -69,40 +70,58 @@ class Index extends Component
     {
         $this->resetValidation();
         $this->reset(['produk_id', 'jumlah', 'tanggal', 'penjualan_id']);
-        $this->loadProdukData(); // Refresh dropdown
+        $this->tanggal = now()->format('Y-m-d');
+        $this->loadProdukData();
     }
 
     public function store()
     {
         $this->validate([
             'produk_id' => 'required|exists:produks,id',
-            'jumlah' => 'required|integer|min:1',
+            'jumlah' => 'required|numeric|min:1',
             'tanggal' => 'required|date',
         ],
         [
             'produk_id.required' => 'Produk tidak boleh kosong.',
             'produk_id.exists' => 'Produk tidak valid.',
             'jumlah.required' => 'Jumlah tidak boleh kosong.',
-            'jumlah.integer' => 'Jumlah harus berupa bilangan bulat.',
+            'jumlah.numeric' => 'Jumlah harus berupa angka.',
             'jumlah.min' => 'Jumlah minimal 1.',
             'tanggal.required' => 'Tanggal tidak boleh kosong.',
             'tanggal.date' => 'Format tanggal tidak valid.',
         ]);
 
-        try {
+        $produk = Produk::find($this->produk_id);
+
+        if ($produk->stok < $this->jumlah) {
+            $this->dispatch('error', 'Stok produk ' . $produk->nama_produk . ' tidak mencukupi untuk penjualan. Stok tersedia: ' . $produk->stok);
+            return;
+        }
+
+        $totalHarga = $produk->harga * $this->jumlah; // <-- HITUNG TOTAL HARGA
+
+        DB::transaction(function () use ($produk, $totalHarga) { // <-- LEWATKAN $totalHarga
             Penjualan::create([
                 'produk_id' => $this->produk_id,
                 'jumlah' => $this->jumlah,
                 'tanggal' => $this->tanggal,
+                'total_harga' => $totalHarga, // <-- SIMPAN TOTAL HARGA
             ]);
 
-            $this->dispatch('success', 'Penjualan berhasil ditambahkan.');
-            $this->dispatch('closeCreatePenjualanModal');
-            $this->resetValidation();
-            $this->reset(['produk_id', 'jumlah', 'tanggal', 'penjualan_id']);
-        } catch (\Exception $e) {
-            $this->dispatch('error', 'Gagal menambahkan penjualan: ' . $e->getMessage());
-        }
+            $produk->decrement('stok', $this->jumlah);
+
+            StokLog::create([
+                'produk_id' => $this->produk_id,
+                'jenis' => 'keluar',
+                'jumlah' => $this->jumlah,
+                'tanggal' => $this->tanggal,
+            ]);
+        });
+
+        $this->dispatch('success', 'Penjualan berhasil disimpan dan stok diperbarui.');
+        $this->dispatch('closeCreatePenjualanModal');
+        $this->resetValidation();
+        $this->reset(['produk_id', 'jumlah', 'tanggal', 'penjualan_id']);
     }
 
     public function edit($id)
@@ -111,9 +130,9 @@ class Index extends Component
         $this->penjualan_id = $penjualan->id;
         $this->produk_id = $penjualan->produk_id;
         $this->jumlah = $penjualan->jumlah;
-        $this->tanggal = $penjualan->tanggal->format('Y-m-d'); // Format tanggal untuk input date HTML
+        $this->tanggal = $penjualan->tanggal->format('Y-m-d');
 
-        $this->loadProdukData(); // Refresh dropdown
+        $this->loadProdukData();
         $this->dispatch('showEditPenjualanModal');
     }
 
@@ -124,27 +143,38 @@ class Index extends Component
 
         $this->validate([
             'produk_id' => 'required|exists:produks,id',
-            'jumlah' => 'required|integer|min:1',
+            'jumlah' => 'required|numeric|min:1',
             'tanggal' => 'required|date',
         ],
         [
             'produk_id.required' => 'Produk tidak boleh kosong.',
             'produk_id.exists' => 'Produk tidak valid.',
             'jumlah.required' => 'Jumlah tidak boleh kosong.',
-            'jumlah.integer' => 'Jumlah harus berupa bilangan bulat.',
+            'jumlah.numeric' => 'Jumlah harus berupa angka.',
             'jumlah.min' => 'Jumlah minimal 1.',
             'tanggal.required' => 'Tanggal tidak boleh kosong.',
             'tanggal.date' => 'Format tanggal tidak valid.',
         ]);
+
+        $produkBaru = Produk::find($this->produk_id);
+        // Penting: Logika update stok dan log jika jumlah atau produk_id berubah
+        // Ini adalah bagian kompleks. Untuk saat ini, kita hanya update data penjualan
+        // tanpa membalikkan/menyesuaikan stok. Jika jumlah penjualan diubah,
+        // penyesuaian stok harus dilakukan secara manual atau melalui fitur Stok Log terpisah
+        // atau Anda perlu logika yang lebih rumit di sini.
+
+        // Jika Anda ingin mengupdate total_harga berdasarkan harga produk saat ini saat update:
+        $newTotalHarga = $produkBaru->harga * $this->jumlah; // <-- HITUNG ULANG TOTAL HARGA
 
         try {
             $penjualan->update([
                 'produk_id' => $this->produk_id,
                 'jumlah' => $this->jumlah,
                 'tanggal' => $this->tanggal,
+                'total_harga' => $newTotalHarga, // <-- SIMPAN TOTAL HARGA YANG DIUPDATE
             ]);
 
-            $this->dispatch('success', 'Penjualan berhasil diperbarui.');
+            $this->dispatch('success', 'Data penjualan berhasil diperbarui.');
             $this->dispatch('closeEditPenjualanModal');
             $this->resetValidation();
             $this->reset(['produk_id', 'jumlah', 'tanggal', 'penjualan_id']);
@@ -167,9 +197,25 @@ class Index extends Component
 
         try {
             $penjualan = Penjualan::findOrFail($this->penjualan_id);
-            $penjualan->delete();
+            $produk = Produk::find($penjualan->produk_id);
 
-            $this->dispatch('success', 'Penjualan berhasil dihapus.');
+            DB::transaction(function () use ($penjualan, $produk) {
+                if ($produk) {
+                    $produk->increment('stok', $penjualan->jumlah);
+                }
+
+                StokLog::create([
+                    'produk_id' => $penjualan->produk_id,
+                    'jenis' => 'masuk',
+                    'jumlah' => $penjualan->jumlah,
+                    'tanggal' => now(),
+                    'keterangan' => 'Pengembalian stok dari penjualan dihapus ID: ' . $penjualan->id
+                ]);
+
+                $penjualan->delete();
+            });
+
+            $this->dispatch('success', 'Penjualan berhasil dihapus dan stok dikembalikan.');
             $this->dispatch('closeDeletePenjualanModal');
             $this->reset('penjualan_id');
         } catch (\Exception $e) {

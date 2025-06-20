@@ -24,38 +24,36 @@
             </div>
         </section>
 
-
         <section class="content">
             <div class="card">
                 <div class="card-header">
                     <div class="d-flex justify-content-between">
                         <div>
-                            
                             <button wire:click="create" class="btn btn-sm btn-primary" data-toggle="modal" data-target="#createProdukModal">
-                                <i class="fas fa-plus mr-1"></i>
-                                Tambah Data
+                                <i class="fas fa-plus mr-1"></i> Tambah Data
                             </button>
                         </div>
                         <div class="btn-group dropleft">
                             <button type="button" class="btn btn-sm btn-warning dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fas fa-print mr-1"></i>
-                                Cetak
+                                <i class="fas fa-print mr-1"></i> Cetak
                             </button>
                             <div class="dropdown-menu">
                                 <a class="dropdown-item text-success" href="#">
-                                    <i class="fas fa-file-excel mr-1"></i>
-                                    Excel</a>
-                                    <a class="dropdown-item text-danger" href="#">
-                                    <i class="fas fa-file-pdf mr-1"></i>
-                                    PDF</a>
+                                    <i class="fas fa-file-excel mr-1"></i> Excel
+                                </a>
+                                <a class="dropdown-item text-danger" href="#">
+                                    <i class="fas fa-file-pdf mr-1"></i> PDF
+                                </a>
                             </div>
                         </div>
                     </div>
-
                 </div>
+
                 <div class="card-body">
-                    <div class="mb-3 d-flex justify-content-between">
-                        <div class="col-3">
+                    
+                    <div class="mb-3 d-flex justify-content-between align-items-center">
+                        
+                        <div class="col-2 pl-0">
                             <select wire:model.live="paginate" class="form-control" id="paginate">
                                 <option value="10">10</option>
                                 <option value="25">25</option>
@@ -63,7 +61,29 @@
                                 <option value="100">100</option>
                             </select>
                         </div>
-                        <div class="col-4">
+
+                        
+                        <div class="col-3">
+                            <select wire:model.live="filterKategoriId" class="form-control">
+                                <option value="">Semua Kategori</option>
+                                <!--[if BLOCK]><![endif]--><?php $__currentLoopData = $kategoris; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $kategori): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($kategori->id); ?>"><?php echo e($kategori->nama_kategori); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><!--[if ENDBLOCK]><![endif]-->
+                            </select>
+                        </div>
+
+                        
+                        <div class="col-3">
+                            <select wire:model.live="filterSupplierId" class="form-control">
+                                <option value="">Semua Supplier</option>
+                                <!--[if BLOCK]><![endif]--><?php $__currentLoopData = $suppliers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $supplier): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($supplier->id); ?>"><?php echo e($supplier->nama_supplier); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><!--[if ENDBLOCK]><![endif]-->
+                            </select>
+                        </div>
+
+                        
+                        <div class="col-4 pr-0">
                             <input wire:model.live="search" type="text" name="search" class="form-control" placeholder="Search...">
                         </div>
                     </div>
@@ -88,14 +108,12 @@
                                         <td><?php echo e($item->nama_produk); ?></td>
                                         <td>Rp <?php echo e(number_format($item->harga, 0, ',', '.')); ?></td>
                                         <td><?php echo e($item->stok); ?></td>
-                                        <td><?php echo e($item->kategori->nama_kategori ?? 'N/A'); ?></td> 
-                                        <td><?php echo e($item->supplier->nama_supplier ?? 'N/A'); ?></td> 
+                                        <td><?php echo e($item->kategori->nama_kategori ?? 'N/A'); ?></td>
+                                        <td><?php echo e($item->supplier->nama_supplier ?? 'N/A'); ?></td>
                                         <td>
-                                            
                                             <button wire:click="edit(<?php echo e($item->id); ?>)" class="btn btn-sm btn-warning" data-toggle="modal" data-target="#editProdukModal">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            
                                             <button wire:click="deleteConfirmation(<?php echo e($item->id); ?>)" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteProdukModal">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -115,70 +133,49 @@
                     </div>
                 </div>
             </div>
-            <!-- /.card -->
-
         </section>
-        <!-- /.content -->
-    </div>
 
-    
-    <?php echo $__env->make('livewire.superadmin.produk.create', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-    <?php echo $__env->make('livewire.superadmin.produk.edit', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-    <?php echo $__env->make('livewire.superadmin.produk.delete', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+        
+        <?php echo $__env->make('livewire.superadmin.produk.create', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+        <?php echo $__env->make('livewire.superadmin.produk.edit', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+        <?php echo $__env->make('livewire.superadmin.produk.delete', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
-    
-        <?php
+        
+            <?php
         $__scriptKey = '3935592984-0';
         ob_start();
     ?>
-    <script>
-        // Listener untuk SweetAlert Success
-        $wire.on('success', (message) => {
-            Swal.fire({
-                title: "Sukses!",
-                text: message,
-                icon: "success"
+        <script>
+            $wire.on('success', (message) => {
+                Swal.fire({ title: "Sukses!", text: message, icon: "success" });
             });
-        });
 
-        // Listener untuk SweetAlert Error
-        $wire.on('error', (message) => {
-            Swal.fire({
-                title: "Gagal!",
-                text: message,
-                icon: "error"
+            $wire.on('error', (message) => {
+                Swal.fire({ title: "Gagal!", text: message, icon: "error" });
             });
-        });
 
-        // Listener untuk membuka modal Create
-        $wire.on('showCreateModal', () => {
-            $('#createProdukModal').modal('show');
-        });
+            $wire.on('showCreateProdukModal', () => { $('#createProdukModal').modal('show'); });
+            $wire.on('closeCreateProdukModal', () => {
+                $('#createProdukModal').modal('hide');
+                Swal.fire({ title: "Sukses!", text: "Data berhasil ditambahkan!", icon: "success" });
+            });
 
-        // Listener untuk menutup modal Create
-        $wire.on('closeCreateModal', () => {
-            $('#createProdukModal').modal('hide');
-        });
+            $wire.on('showEditProdukModal', () => { $('#editProdukModal').modal('show'); });
+            $wire.on('closeEditProdukModal', () => {
+                $('#editProdukModal').modal('hide');
+                Swal.fire({ title: "Sukses!", text: "Data berhasil diperbarui!", icon: "success" });
+            });
 
-        // Listener untuk membuka modal Edit
-        $wire.on('showEditModal', () => {
-            $('#editProdukModal').modal('show');
-        });
-
-        // Listener untuk menutup modal Edit
-        $wire.on('closeEditModal', () => {
-            $('#editProdukModal').modal('hide');
-        });
-
-        // Listener untuk menutup modal Delete
-        $wire.on('closeDeleteModal', () => {
-            $('#deleteProdukModal').modal('hide');
-        });
-    </script>
-        <?php
+            $wire.on('closeDeleteProdukModal', () => {
+                $('#deleteProdukModal').modal('hide');
+                Swal.fire({ title: "Terhapus!", text: "Data berhasil dihapus!", icon: "success" });
+            });
+        </script>
+            <?php
         $__output = ob_get_clean();
 
         \Livewire\store($this)->push('scripts', $__output, $__scriptKey)
     ?>
 
+    </div>
 </div><?php /**PATH D:\laragon\www\Toko-Revalina\resources\views/livewire/superadmin/produk/index.blade.php ENDPATH**/ ?>

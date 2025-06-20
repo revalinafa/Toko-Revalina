@@ -14,15 +14,13 @@ class Penjualan extends Model
         'produk_id',
         'jumlah',
         'tanggal',
+        'total_harga', // <-- TAMBAHKAN BARIS INI
     ];
 
     protected $casts = [
-        'tanggal' => 'date', // Mengubah tanggal ke objek Carbon secara otomatis
+        'tanggal' => 'date',
     ];
 
-    /**
-     * Get the produk that owns the Penjualan.
-     */
     public function produk(): BelongsTo
     {
         return $this->belongsTo(Produk::class);

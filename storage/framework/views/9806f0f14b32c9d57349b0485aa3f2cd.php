@@ -70,6 +70,12 @@
               </p>
             </a>
           </li>
+              <li class="nav-item">
+        <a href="<?php echo e(route('superadmin.laporan.harian')); ?>" class="nav-link <?php echo e(request()->routeIs('superadmin.laporan.harian') ? 'active' : ''); ?>">
+            <i class="nav-icon fas fa-chart-bar"></i>
+            <p>Laporan Harian</p>
+        </a>
+          </li>
           <li class="nav-header">MENU ADMIN</li>
             <li class="nav-item">
                 <a href="3" class="nav-link">
